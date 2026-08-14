@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>מרכז השליטה · WZML-X HE של יוסף</title>
+  <style>
+    :root { color-scheme: dark; --bg:#08111f; --card:#111d2e; --line:#263750; --blue:#46a6ff; --green:#39d98a; --red:#ff6b73; --muted:#a9b9ce; }
+    * { box-sizing:border-box; }
+    html { min-height:100%; overflow-y:scroll; scroll-behavior:smooth; }
+    body { margin:0; min-height:100vh; height:auto; overflow-x:hidden; overflow-y:visible; background:linear-gradient(145deg,#07101c,#10223b); color:#f7fbff; font-family:Arial,"Noto Sans Hebrew",sans-serif; }
+    .shell { width:min(1680px,100%); min-height:100vh; margin:auto; padding:16px clamp(10px,1.3vw,22px) 44px; }
+    .top { display:flex; align-items:center; justify-content:space-between; gap:14px; margin-bottom:12px; }
+    .jump-nav { position:sticky; top:6px; z-index:20; display:flex; gap:7px; overflow-x:auto; padding:7px; margin:0 0 12px; border:1px solid var(--line); border-radius:12px; background:rgba(8,17,31,.96); box-shadow:0 6px 18px rgba(0,0,0,.2); scrollbar-width:thin; }
+    .jump-nav a { flex:1 0 auto; min-height:36px; padding:0 12px; background:#20334d; color:#f7fbff; white-space:nowrap; }
+    [id] { scroll-margin-top:66px; }
+    h1,h2,p { margin-top:0; }
+    h1 { font-size:clamp(1.65rem,5vw,2.4rem); margin-bottom:6px; }
+    h2 { font-size:1.15rem; }
+    .muted { color:var(--muted); }
+    .grid { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:10px; align-items:start; }
+    .card { grid-column:span 4; background:rgba(17,29,46,.94); border:1px solid var(--line); border-radius:15px; padding:15px; box-shadow:0 8px 26px rgba(0,0,0,.16); }
+    .wide { grid-column:span 8; }
+    .full { grid-column:1/-1; }
+    .half { grid-column:span 6; }
+    .metric { font-size:2rem; font-weight:800; margin:8px 0; }
+    .bar { height:10px; background:#07101c; border-radius:20px; overflow:hidden; margin-top:13px; }
+    .bar span { display:block; height:100%; background:linear-gradient(90deg,var(--green),var(--blue)); }
+    .services { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+    .service { display:flex; justify-content:space-between; gap:8px; padding:10px; background:#0b1627; border-radius:10px; }
+    .ok { color:var(--green); } .bad { color:var(--red); }
+    .actions { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+    .actions form { margin:0; }
+    .task-list { display:grid; gap:10px; margin-top:14px; }
+    .task-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:13px; background:#0b1627; border-radius:12px; }
+    .task-info { min-width:0; }
+    .task-name { display:block; overflow-wrap:anywhere; }
+    .ltr { direction:ltr; unicode-bidi:isolate; display:inline-block; }
+    a,.button,button { display:inline-flex; align-items:center; justify-content:center; min-height:42px; padding:0 15px; border:0; border-radius:10px; background:var(--blue); color:#03101e; font-weight:800; text-decoration:none; cursor:pointer; }
+    button:disabled { opacity:.5; cursor:not-allowed; }
+    .secondary { background:#20334d; color:#f7fbff; }
+    .disabled-link { background:#18273a; color:var(--muted); cursor:not-allowed; border:1px solid var(--line); }
+    .logout { background:transparent; border:1px solid var(--line); color:#f7fbff; }
+    .login { width:min(430px,calc(100% - 32px)); margin:12vh auto; background:var(--card); border:1px solid var(--line); border-radius:22px; padding:28px; }
+    label { display:block; font-weight:700; margin-bottom:9px; }
+    input,textarea,select { width:100%; min-height:44px; border:1px solid var(--line); border-radius:10px; background:#07101c; color:white; padding:9px 12px; font-size:1rem; margin-bottom:10px; }
+    .check-row { display:flex; align-items:flex-start; gap:10px; padding:13px; margin-bottom:14px; background:#0b1627; border-radius:12px; cursor:pointer; }
+    .check-row input { width:22px; min-height:22px; margin:0; flex:0 0 auto; }
+    textarea { min-height:100px; resize:vertical; direction:ltr; text-align:left; unicode-bidi:plaintext; }
+    .form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+    .notice { border-radius:12px; padding:13px; margin-bottom:16px; background:#132b24; border:1px solid #275f4b; }
+    .notice.bad { background:#3d1e29; border-color:#743745; color:#ffc9ce; }
+    .danger { background:var(--red); color:#26060a; }
+    .small { font-size:.88rem; }
+    .error { background:#3d1e29; color:#ffc9ce; border-radius:12px; padding:12px; margin-bottom:14px; }
+    @media(max-width:980px){ .card{grid-column:span 6}.wide,.full{grid-column:1/-1}.shell{padding-inline:12px}.services{grid-template-columns:1fr} }
+    @media(max-width:760px){ .card,.wide,.half{grid-column:1/-1}.form-grid{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}.logout{width:100%}.jump-nav a{flex:0 0 auto} }
+  </style>
+</head>
+<body>
+{% if not authorized %}
+  <main class="login">
+    <h1>מרכז השליטה</h1>
+    <p class="muted">הזינו את סיסמת הניהול של WZML-X HE.</p>
+    {% if error %}<div class="error" role="alert">{{ error }}</div>{% endif %}
+    <form method="post" action="/">
+      <label for="password">סיסמה</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required autofocus>
+      <button type="submit">כניסה מאובטחת</button>
+    </form>
+  </main>
+{% else %}
+  <main class="shell">
+    <header class="top">
+      <div><h1>מרכז השליטה של WZML-X HE</h1><div class="muted">המהדורה של יוסף · מצב השרת, השירותים והגיבויים</div></div>
+      <form method="post" action="/logout"><button class="logout" type="submit">יציאה</button></form>
+    </header>
+    <nav class="jump-nav" aria-label="קפיצה מהירה בין אזורי הניהול"><a href="#new-task">➕ משימה חדשה</a><a href="#cache">🧹 מטמון</a><a href="#active-tasks">📥 משימות פעילות</a><a href="#file-selection">📂 בחירת קבצים</a></nav>
+    {% if notice %}<div class="notice {{ '' if notice_ok else 'bad' }}" role="status">{{ notice }}</div>{% endif %}
+    <section class="grid">
+      <article class="card"><h2>מעבד</h2><div class="metric">{{ cpu }}%</div><div class="bar"><span style="width:{{ cpu }}%"></span></div></article>
+      <article class="card"><h2>זיכרון</h2><div class="metric">{{ memory }}%</div><div class="muted">{{ memory_used }} מתוך {{ memory_total }}</div><div class="bar"><span style="width:{{ memory }}%"></span></div></article>
+      <article class="card"><h2>אחסון</h2><div class="metric">{{ disk }}%</div><div class="muted">{{ disk_free }} פנויים</div><div class="bar"><span style="width:{{ disk }}%"></span></div></article>
+      <article class="card wide"><h2>שירותים</h2><div class="services">{% for name,ready in services %}<div class="service"><span>{{ name }}</span><strong class="{{ 'ok' if ready else 'bad' }}">{{ 'פעיל' if ready else 'לא זמין' }}</strong></div>{% endfor %}</div></article>
+      <article class="card"><h2>גיבוי ושחזור</h2><div class="metric" style="font-size:1.55rem">{{ backup_state }}</div><div class="muted">{{ backup_time }}</div><p>מצב: <span class="ltr">{{ backup_mode }}</span> · גודל: <span class="ltr">{{ backup_size }}</span></p><div class="actions"><form method="post" action="/dashboard/action"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="action" value="backup_state"><button type="submit" class="secondary">גיבוי מהיר</button></form><form method="post" action="/dashboard/action" onsubmit="return confirm('ליצור חבילת גיבוי מלאה הכוללת Images?')"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="action" value="backup_full"><button type="submit">גיבוי מלא</button></form></div></article>
+      <article class="card full"><h2>גישה מהירה</h2><p class="muted">אפשר להפעיל ולנהל משימות גם כאן וגם בבוט Telegram. ממשקי המנועים מיועדים לבדיקה מתקדמת.</p><div class="actions">{% if qbit_url %}<a href="{{ qbit_url }}">qBittorrent</a>{% else %}<span class="disabled-link" role="status">qBittorrent — לא זמין</span>{% endif %}{% if nzb_url %}<a href="{{ nzb_url }}" class="secondary">SABnzbd</a>{% else %}<span class="disabled-link" role="status">SABnzbd — נדרשת הפעלה</span>{% endif %}<a href="/" class="secondary">רענון נתונים</a></div></article>
+      <article class="card full" id="new-task">
+        <h2>הפעלת משימה חדשה — מקור ויעד בשליטתך</h2>
+        <p class="muted">אפשר להדביק קישור אחד או כמה קישורים, אחד בכל שורה. עבור Telegram בוחרים בנפרד מי מעלה ולאן הקבצים נשלחים.</p>
+        <form method="post" action="/dashboard/action">
+          <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="action" value="start_task">
+          <label for="links">קישורים או Magnet</label>
+          <textarea id="links" name="links" required placeholder="https://example.com/file&#10;https://example.com/another"></textarea>
+          <div class="form-grid">
+            <div><label for="mode">מנוע מקור</label><select id="mode" name="mode">{% for value,label,enabled in engine_options %}<option value="{{ value }}" {{ 'disabled' if not enabled else '' }}>{{ label }}</option>{% endfor %}</select></div>
+            <div><label for="destination">יעד</label><select id="destination" name="destination"><option value="telegram">Telegram</option><option value="gofile">העלאה ל־GoFile</option><option value="cloud">ענן מוגדר</option></select></div>
+          </div>
+          <div class="form-grid">
+            <div><label for="upload_source">מקור העלאה ל־Telegram</label><select id="upload_source" name="upload_source"><option value="bot">Bot — עד 2GB לחלק</option><option value="user">Userbot Premium — עד 3.9GB</option></select></div>
+            <div><label for="upload_target">יעד Telegram</label><select id="upload_target" name="upload_target"><option value="private">פרטי — הצ׳אט עם הבוט</option><option value="channel">ערוץ</option></select></div>
+          </div>
+          <label for="upload_channel">חיבור ערוץ</label><input id="upload_channel" name="upload_channel" dir="ltr" placeholder="@channel או -1001234567890"><p class="muted small">נדרש רק כשנבחר יעד ערוץ. ההפעלה תיחסם אם למקור שנבחר אין הרשאת פרסום.</p>
+          <button type="submit">הפעלת המשימה</button>
+        </form>
+      </article>
+      <article class="card wide" id="cache">
+        <h2>מטמון ושאריות משימות</h2>
+        <div class="services">
+          <div class="service"><span>שאריות הורדה/העלאה</span><strong class="{{ 'bad' if residuals.bytes else 'ok' }} ltr">{{ residuals.size }}</strong></div>
+          <div class="service"><span>פריטי שאריות</span><strong class="ltr">{{ residuals.entries }}</strong></div>
+          <div class="service"><span>Python</span><strong class="ltr">{{ cache.python }}</strong></div>
+          <div class="service"><span>Docker Build Cache</span><strong class="ltr">{{ cache.docker }}</strong></div>
+          <div class="service"><span>ניתן לפינוי ב־Docker</span><strong class="ltr">{{ cache.reclaimable }}</strong></div>
+          <div class="service"><span>Local Bot API</span><strong class="ltr">{{ cache.bot_api }}</strong></div>
+        </div>
+        <p class="muted small">סריקה אחרונה: <span class="ltr">{{ cache.scanned_at }}</span>. ניקוי שאריות חסום אוטומטית כל עוד קיימת משימה פעילה. מטמון Bot API מוצג למדידה ואינו נמחק מהפעולה הבטוחה.</p>
+        <div class="actions">
+          <form method="post" action="/dashboard/action"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="action" value="cache_scan"><button type="submit" class="secondary">סריקת מטמון</button></form>
+          <form method="post" action="/dashboard/action" onsubmit="return confirm('לנקות Python ו־Docker Build Cache ישן בלבד?')"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="action" value="cache_clean"><button type="submit" class="secondary">ניקוי מטמון בטוח</button></form>
+          <form method="post" action="/dashboard/action" onsubmit="return confirm('למחוק את כל שאריות ההורדות וההעלאות? הפעולה תיחסם אם יש משימה פעילה.')"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="action" value="clean_downloads"><button type="submit" class="danger" {{ 'disabled' if not residuals.cleanup_allowed else '' }}>ניקוי שאריות משימות</button></form>
+        </div>
+      </article>
+      <article class="card"><h2>הגנות ניקוי</h2><p><strong>{{ active_tasks|length }}</strong> משימות פעילות בבוט</p><p><strong>{{ residuals.protected_entries }}</strong> תיקיות מוגנות</p><p class="muted small">Sessions, MongoDB, סודות, קובצי GoFile, volumes והגיבויים אינם מועמדים לניקוי.</p></article>
+      <article class="card half" id="active-tasks">
+        <h2>ניהול משימות פעילות</h2>
+        {% if task_request.request_id %}<p class="notice {{ '' if task_request.state == 'success' else 'bad' }}">בקשת Dashboard <span class="ltr">{{ task_request.request_id }}</span>: {{ task_request.message }} · <span class="ltr">{{ task_request.updated_at }}</span></p>{% endif %}
+        {% if active_tasks %}<div class="task-list">{% for task in active_tasks %}<div class="task-row"><div class="task-info"><strong class="task-name">{{ task.name }}</strong><span class="muted"><span>{{ task.state }}</span> · <span class="ltr">{{ task.progress }}</span> · <span class="ltr">{{ task.gid }}</span></span></div><form method="post" action="/dashboard/action" onsubmit="return confirm('לבטל את המשימה הפעילה?')"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="action" value="cancel_task"><input type="hidden" name="gid" value="{{ task.gid }}"><button type="submit" class="danger">ביטול</button></form></div>{% endfor %}</div>{% else %}<p class="muted">אין כרגע משימות פעילות. ניתן לנקות שאריות או להפעיל משימה חדשה.</p>{% endif %}
+      </article>
+      <article class="card half" id="file-selection">
+        <h2>בחירת קבצים במשימות פעילות</h2>
+        {% if selection_tasks %}
+          <p class="muted">הכניסה מכאן כבר כוללת את קוד המשימה הנכון; אין צורך להקליד קוד נוסף.</p>
+          <div class="task-list">
+          {% for task in selection_tasks %}
+            <div class="task-row">
+              <div class="task-info"><strong class="task-name">{{ task.name }}</strong><span class="muted"><span class="ltr">{{ task.engine }}</span> · <span class="ltr">{{ task.state }}</span></span></div>
+              <a href="{{ task.url }}">בחירת קבצים</a>
+            </div>
+          {% endfor %}
+          </div>
+        {% else %}
+          <p class="muted">אין כרגע משימת qBittorrent, Aria2 או SABnzbd פעילה. קוד בחירת קבצים נוצר רק לאחר פתיחת משימה עם אפשרות “בחירת קבצים”; הוא מופיע גם בהודעת הבוט.</p>
+        {% endif %}
+      </article>
+    </section>
+  </main>
+{% endif %}
+</body>
+</html>

@@ -1,0 +1,29 @@
+services:
+  wzmlx:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: wzmlx-hebrew:server
+    container_name: wzmlx-hebrew-bot
+    command: bash start.sh
+    restart: unless-stopped
+    network_mode: host
+    env_file:
+      - .env.server
+    volumes:
+      - ./config.py:/usr/src/app/config.py:ro
+      - ./accounts:/usr/src/app/accounts
+      - ./downloads:/usr/src/app/downloads
+      - ./runtime/control:/usr/src/app/runtime/control
+    mem_limit: 3g
+    cpus: 1.5
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          python -c "import urllib.request;
+          urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=5).read()"
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s

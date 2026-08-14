@@ -40,6 +40,7 @@ from aiohttp import ClientSession
 from psutil import cpu_percent, disk_usage, virtual_memory
 
 from bot import DOWNLOAD_DIR, task_dict, task_dict_lock
+from web.health_state import read_release_id
 from bot.helper.ext_utils.backup_control import (
     read_backup_settings,
     request_backup,
@@ -687,6 +688,7 @@ async def health():
     payload = {
         "ok": telegram_ok,
         "service": "wzmlx",
+        "release_id": read_release_id(),
         "telegram": "connected" if telegram_ok else "disconnected",
     }
     if marker_age is not None:

@@ -4,6 +4,16 @@ set -Eeuo pipefail
 # תרגיל השחזור אינו נוגע במסד הפעיל: ה-dump נטען למסד זמני שנמחק תמיד בסיום.
 archive="${1:-$(cat "${HOME}/wzmlx-backups/LATEST")}"
 [[ -s "${archive}" ]] || { echo "ארכיון הגיבוי לא נמצא." >&2; exit 1; }
+deployment_env="${WZMLX_DEPLOYMENT_ENV:-}"
+profile_value() { awk -F= -v key="$1" '$1 == key {sub(/^[^=]*=/, ""); print; exit}' "${deployment_env}"; }
+if [[ -n "${deployment_env}" ]]; then
+  [[ -s "${deployment_env}" ]] || { echo "מפת פריסת היעד חסרה." >&2; exit 1; }
+  mongo_container="$(profile_value WZMLX_MONGO_CONTAINER_NAME)"
+  bot_api_base="$(profile_value WZMLX_BOT_API_BASE_URL)"
+else
+  mongo_container="wzmlx-mongodb"
+  bot_api_base="http://127.0.0.1:8081"
+fi
 temporary_dir="$(mktemp -d)"
 verify_db="wzmlx_restore_verify_$(date +%s)"
 mongo_env="${temporary_dir}/mongodb.env"
@@ -18,7 +28,7 @@ source "${mongo_env}"
 set +a
 
 cleanup() {
-  docker exec -e MONGO_INITDB_ROOT_USERNAME -e MONGO_INITDB_ROOT_PASSWORD -e VERIFY_DB="${verify_db}" wzmlx-mongodb \
+  docker exec -e MONGO_INITDB_ROOT_USERNAME -e MONGO_INITDB_ROOT_PASSWORD -e VERIFY_DB="${verify_db}" "${mongo_container}" \
     sh -c 'mongosh --quiet --username "$MONGO_INITDB_ROOT_USERNAME" --password "$MONGO_INITDB_ROOT_PASSWORD" --authenticationDatabase admin --eval "db.getSiblingDB(\"$VERIFY_DB\").dropDatabase()"' >/dev/null 2>&1 || true
   rm -rf "${temporary_dir}"
 }
@@ -26,10 +36,10 @@ trap cleanup EXIT
 
 echo "משחזר את MongoDB למסד בדיקה מבודד..."
 tar -xOf "${archive}" "${prefix}/payload/mongodb.archive.gz" \
-  | docker exec -i -e MONGO_INITDB_ROOT_USERNAME -e MONGO_INITDB_ROOT_PASSWORD -e VERIFY_DB="${verify_db}" wzmlx-mongodb \
+  | docker exec -i -e MONGO_INITDB_ROOT_USERNAME -e MONGO_INITDB_ROOT_PASSWORD -e VERIFY_DB="${verify_db}" "${mongo_container}" \
       sh -c 'mongorestore --quiet --host 127.0.0.1 --username "$MONGO_INITDB_ROOT_USERNAME" --password "$MONGO_INITDB_ROOT_PASSWORD" --authenticationDatabase admin --archive --gzip --nsFrom="wzmlx.*" --nsTo="$VERIFY_DB.*"'
 
-collection_count="$(docker exec -e MONGO_INITDB_ROOT_USERNAME -e MONGO_INITDB_ROOT_PASSWORD -e VERIFY_DB="${verify_db}" wzmlx-mongodb \
+collection_count="$(docker exec -e MONGO_INITDB_ROOT_USERNAME -e MONGO_INITDB_ROOT_PASSWORD -e VERIFY_DB="${verify_db}" "${mongo_container}" \
   sh -c 'mongosh --quiet --username "$MONGO_INITDB_ROOT_USERNAME" --password "$MONGO_INITDB_ROOT_PASSWORD" --authenticationDatabase admin --eval "db.getSiblingDB(\"$VERIFY_DB\").getCollectionNames().length"' | tail -n 1)"
 [[ "${collection_count}" =~ ^[0-9]+$ ]] || { echo "לא התקבלה ספירת אוספים תקינה ממסד הבדיקה." >&2; exit 1; }
 
@@ -43,5 +53,5 @@ if not match:
 print(match.group(1))
 PY
 )"
-curl -fsS "http://127.0.0.1:8081/bot${bot_token}/getMe" | python3 -c 'import json,sys; raise SystemExit(0 if json.load(sys.stdin).get("ok") else 1)'
+curl -fsS "${bot_api_base%/}/bot${bot_token}/getMe" | python3 -c 'import json,sys; raise SystemExit(0 if json.load(sys.stdin).get("ok") else 1)'
 echo "תרגיל השחזור עבר: MongoDB שוחזר למסד זמני ו-Bot API זוהה וחובר בהצלחה."

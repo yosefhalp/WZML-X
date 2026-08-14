@@ -36,6 +36,9 @@ CONTROL_DIR = Path(
 BACKUP_ROOT = Path(
     os.environ.get("WZMLX_BACKUP_ROOT", str(Path.home() / "wzmlx-backups"))
 ).resolve()
+CONFIG_PATH = Path(
+    os.environ.get("WZMLX_CONFIG_PATH", str(PROJECT_DIR / "config.py"))
+).resolve()
 SETTINGS_FILE = CONTROL_DIR / "backup-settings.json"
 STATUS_FILE = CONTROL_DIR / "backup-status.json"
 DAILY_LEDGER_FILE = CONTROL_DIR / "backup-daily-ledger.json"
@@ -333,7 +336,7 @@ def _safe_error_text(error: Exception) -> str:
 def _config_integer(name: str) -> int:
     """קורא מספר קבוע מ־config.py בלי להריץ את קובץ הסודות."""
 
-    tree = ast.parse((PROJECT_DIR / "config.py").read_text(encoding="utf-8"))
+    tree = ast.parse(CONFIG_PATH.read_text(encoding="utf-8"))
     for node in tree.body:
         if not isinstance(node, (ast.Assign, ast.AnnAssign)):
             continue
@@ -347,7 +350,7 @@ def _config_integer(name: str) -> int:
 def _bot_token() -> str:
     """קורא את טוקן הבוט כערך קבוע בלבד ואינו מדפיס אותו לעולם."""
 
-    tree = ast.parse((PROJECT_DIR / "config.py").read_text(encoding="utf-8"))
+    tree = ast.parse(CONFIG_PATH.read_text(encoding="utf-8"))
     for node in tree.body:
         if not isinstance(node, (ast.Assign, ast.AnnAssign)):
             continue

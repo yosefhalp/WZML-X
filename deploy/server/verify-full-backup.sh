@@ -34,8 +34,11 @@ for image_archive in "${image_archives[@]}"; do
   gzip -dc "${image_archive}" | tar -tf - >/dev/null
 done
 mode="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["mode"])' "${package_dir}/manifest.json")"
-if [[ "${mode}" == "full" && "${#image_archives[@]}" -ne 3 ]]; then
-  echo "ערכה מלאה חייבת לכלול שלוש תמונות Docker." >&2
+bot_api_mode="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("bot_api_restore_mode", "managed"))' "${package_dir}/manifest.json")"
+expected_full_images=3
+[[ "${bot_api_mode}" == "external" ]] && expected_full_images=2
+if [[ "${mode}" == "full" && "${#image_archives[@]}" -ne "${expected_full_images}" ]]; then
+  echo "מספר תמונות Docker אינו תואם לבעלות השירותים במפת הפריסה." >&2
   exit 1
 fi
 if [[ "${mode}" == "state" && "${#image_archives[@]}" -ne 0 ]]; then

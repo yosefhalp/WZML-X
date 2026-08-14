@@ -24,8 +24,8 @@ class TelegramPersistentSessionTests(unittest.TestCase):
     def test_session_directory_is_persistent_and_backed_up(self):
         compose = (ROOT / "docker-compose.server.yml").read_text(encoding="utf-8")
         backup = (ROOT / "deploy" / "server" / "full-backup.sh").read_text(encoding="utf-8")
-        self.assertIn("./accounts:/usr/src/app/accounts", compose)
-        self.assertIn('wzmlx-runtime-data.tar.gz" accounts', backup)
+        self.assertIn("${WZMLX_ACCOUNTS_DIR:-./accounts}:/usr/src/app/accounts", compose)
+        self.assertIn('wzmlx-runtime-data.tar.gz" "$(basename "${accounts_dir}")"', backup)
 
     def test_session_file_keeps_the_host_volume_owner(self):
         source = TG_CLIENT.read_text(encoding="utf-8")

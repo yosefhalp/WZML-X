@@ -1,28 +1,62 @@
-# פריסת WZML-X ב־שרת Linux
+# פריסה ניידת של WZML-X
 
-החבילה הסודית כוללת את קוד הבוט, `config.py` ו־`.env.server`. אין להעלות אותה ל־GitHub או לשירות שיתוף ציבורי.
+GitHub מכיל קוד ודוגמאות בלבד. סודות, כתובת שרת, מפתחות SSH ומצב הריצה נשמרים מחוץ למאגר.
 
-## התקנה
+## שלושת הקבצים והתפקיד שלהם
 
-1. חלצו את החבילה בתיקייה פרטית בשרת.
-2. הריצו `chmod +x deploy/server/*.sh`.
-3. הריצו `deploy/server/wzmlx-install.sh`.
-4. בדקו באמצעות `deploy/server/wzmlx-status.sh`.
+- `deployment.env`: מפת השרת הפרטית. היא מגדירה תיקיית root, שמות Compose וקונטיינרים, פורטים, נתיבי הסודות וחיבור Local Bot API.
+- `controller.env`: פרופיל המחשב שמפעיל את הפריסה. הוא מכיל יעד SSH, מפתח פרטי, `known_hosts` מוצמד ונתיב למפת השרת.
+- תיקיית `shared/` בשרת: כספת המצב הקבוע. בה נשמרים `config.py`, קובצי ENV, MongoDB, Sessions, accounts, הגדרות Worker ונתוני ריצה.
 
-הממשק מאזין בפורט `8080`. MongoDB ו־Telegram Bot API נגישים לבוט דרך כתובות מקומיות בלבד. המתקין מזהה MongoDB קיים; אם הוא חסר, הוא מקים אותו מהקבצים והסודות שבחבילה.
+מעתיקים את `deployment.env.example` ואת `controller.env.example` לתיקייה פרטית מחוץ למאגר, ממלאים נתיבים ושומרים בהרשאת 0600 ב־Linux. אין להוסיף את הקבצים הפרטיים ל־Git.
 
-## גיבוי יומי מלא
+## פריסה ראשונה ועדכונים
 
-המתקין מפעיל timer יומי בשעה 04:15 לפי שעון ישראל. כל גיבוי כולל קוד, סודות, נתוני ריצה, dump של MongoDB ותמונות Docker מלאות של WZML-X, MongoDB ו־Telegram Bot API.
+מהמחשב המקומי, מתוך שורש המאגר:
 
-- מצב התזמון: `systemctl --user list-timers wzmlx-full-backup.timer`
-- הפעלה ידנית: `systemctl --user start wzmlx-full-backup.service`
-- הגיבוי האחרון: `cat ~/wzmlx-backups/LATEST`
-- אימות: `deploy/server/verify-full-backup.sh "$(cat ~/wzmlx-backups/LATEST)"`
-- תרגיל שחזור מבודד: `deploy/server/restore-drill.sh`
+```text
+python deploy/server/deployctl.py --profile <controller.env> preflight
+python deploy/server/deployctl.py --profile <controller.env> bootstrap
+python deploy/server/deployctl.py --profile <controller.env> deploy
+python deploy/server/deployctl.py --profile <controller.env> status
+```
 
-נשמרים שני גיבויים מלאים. מטמון ההורדות הזמני של Telegram Bot API אינו נכלל, אך התמונה, ההזדהות והגדרות החיבור שלו כן נכללות. בעת שחזור נעשה שימוש חוזר בשירות `tg-bot-api` קיים ובריא; שירות חדש מוקם רק אם הוא חסר.
+`deploy` אורז רק קבצים עקובים או קבצים חדשים שאינם מוחרגים ב־`.gitignore`. הוא מעלה release חדש, מאמת Compose, בונה, מחליף את `current`, מפעיל מחדש ומבצע health check. בכשל הוא מחזיר אוטומטית את ה־release הקודם ואינו מעדכן את קובץ המצב.
 
-## עדכון
+Rollback יזום:
 
-לפני החלפת החבילה, שמרו את `config.py`, את `.env.server`, את `accounts/` ואת `downloads/`. לאחר החילוץ הריצו שוב את סקריפט ההתקנה.
+```text
+python deploy/server/deployctl.py --profile <controller.env> rollback
+```
+
+ניקוי מעבדת בדיקה בלבד דורש התאמה מדויקת בין שם הפרופיל לבין סמן הבעלות בשרת:
+
+```text
+python deploy/server/deployctl.py --profile <controller.env> cleanup
+```
+
+הניקוי אינו מוחק volumes ואינו נוגע ב־Local Bot API חיצוני.
+
+## Local Bot API
+
+`WZMLX_BOT_API_MODE=external` הוא מצב ברירת המחדל המומלץ כאשר קיים שירות מרכזי. הפריסה בודקת את הכתובת שב־`WZMLX_BOT_API_BASE_URL`, אך אינה מקימה, עוצרת או מוחקת את השירות.
+
+`WZMLX_BOT_API_MODE=managed` מיועד רק לשרת שבו WZML-X הוא הבעלים המפורש של השירות. שמות הקונטיינר, ה־volume והפורט חייבים להיות ייחודיים בפרופיל.
+
+## מעבר לשרת חדש
+
+1. יוצרים גיבוי מלא ומאומת בשרת המקור.
+2. יוצרים זהות `age` פרטית ושומרים אותה מחוץ ל־Git.
+3. מצפינים את הגיבוי ואת מפת המקור באמצעות `migration_bundle.py create`.
+4. מאמתים באמצעות `migration_bundle.py verify`.
+5. מחלצים באמצעות `migration_bundle.py extract`, עם `target-root`, שם, בסיס פורטים וכתובת Local Bot API של היעד.
+6. כלי החילוץ יוצר `deployment.env` חדש; הוא אינו מעתיק נתיבים מוחלטים מהשרת הישן.
+7. מבצעים bootstrap, שחזור, deploy ובדיקות. שרת המקור נשאר פעיל עד cutover מאושר.
+
+החבילה כוללת manifest וטביעת SHA-256 לכל רכיב, ומוצפנת כולה. מפתח SSH לעולם אינו נכלל בה.
+
+## גיבוי ושחזור
+
+כאשר `WZMLX_DEPLOYMENT_ENV` מוגדר, `full-backup.sh` ו־`full-restore.sh` קוראים את השמות והנתיבים ממפת הפריסה. במצב Bot API חיצוני נשמר חוזה החיבור בלבד; המטמון הזמני והשירות המשותף אינם מועתקים.
+
+לפני שחזור אמיתי חובה לאמת את החבילה ולהגדיר `CONFIRM_RESTORE=YES`. דריסה של יעד קיים דורשת גם `ALLOW_RESTORE_OVERWRITE=YES`.

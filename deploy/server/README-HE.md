@@ -16,7 +16,7 @@ MongoDB נשמר בנפח Docker בשם `wzmlx-mongo-data`, מוגבל ל־512MB
 פתחו מנהרת SSH והשאירו את החלון פתוח:
 
 ```text
-ssh -L 27017:127.0.0.1:27017 yos@100.80.61.41
+ssh -L 27017:127.0.0.1:27017 <user>@<server>
 ```
 
 לאחר מכן אפשר להשתמש ב־MongoDB Compass עם כתובת החיבור שבקובץ `DATABASE_URL.secret`, אבל יש להחליף את שם המארח `wzmlx-mongodb` ב־`127.0.0.1`.

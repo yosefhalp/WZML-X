@@ -1,6 +1,10 @@
 .venv/*
 config.py
 .env.server
+deployment.env
+controller.env
+deploy/server/deployment.env
+deploy/server/controller.env
 deploy/server/.env.mongo
 deploy/server/DATABASE_URL.secret
 deploy/server/backups/
@@ -44,3 +48,5 @@ __pycache__/
 *.tar
 *.tar.gz
 *.sha256
+*.age
+*.agekey

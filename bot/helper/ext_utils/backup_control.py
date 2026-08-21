@@ -159,6 +159,21 @@ def set_daily_backup(*, enabled: bool, chat_id: int) -> BackupSettings:
     return settings
 
 
+def adjust_daily_backup_time(*, minutes: int, chat_id: int) -> BackupSettings:
+    """מזיז את שעת הגיבוי במחזור של יממה ושומר את יתר ההגדרות ללא שינוי."""
+
+    if int(minutes) not in {-60, -15, 15, 60}:
+        raise ValueError("שינוי הזמן אינו נתמך")
+    settings = ensure_backup_settings(chat_id)
+    minutes_in_day = 24 * 60
+    current = settings.daily_hour * 60 + settings.daily_minute
+    adjusted = (current + int(minutes)) % minutes_in_day
+    settings.daily_hour, settings.daily_minute = divmod(adjusted, 60)
+    settings.daily_chat_id = int(chat_id)
+    save_backup_settings(settings)
+    return settings
+
+
 def read_backup_status() -> BackupStatus:
     """מסנן את קובץ ה־worker לרשימת שדות קבועה לפני הצגתו בבוט."""
 

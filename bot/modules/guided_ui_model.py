@@ -201,6 +201,10 @@ def parse_ui_callback(data: str) -> tuple[str, list[str]]:
             "restore",
             "dailyon",
             "dailyoff",
+            "timem60",
+            "timep60",
+            "timem15",
+            "timep15",
         }
         or len(arguments) == 2
         and arguments[0] == "guide"

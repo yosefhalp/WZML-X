@@ -93,6 +93,25 @@ class BackupControlTests(unittest.TestCase):
         self.assertFalse(reloaded.daily_enabled)
         self.assertEqual(98765, reloaded.daily_chat_id)
 
+    def test_daily_time_buttons_adjust_and_wrap_without_losing_settings(self):
+        settings = BACKUP_CONTROL.ensure_backup_settings(98765)
+        settings.daily_enabled = False
+        settings.daily_hour = 23
+        settings.daily_minute = 45
+        BACKUP_CONTROL.save_backup_settings(settings)
+
+        changed = BACKUP_CONTROL.adjust_daily_backup_time(minutes=15, chat_id=98765)
+        self.assertEqual((0, 0), (changed.daily_hour, changed.daily_minute))
+        self.assertFalse(changed.daily_enabled)
+        changed = BACKUP_CONTROL.adjust_daily_backup_time(minutes=-60, chat_id=98765)
+        self.assertEqual((23, 0), (changed.daily_hour, changed.daily_minute))
+        self.assertEqual("Asia/Jerusalem", changed.daily_timezone)
+        self.assertEqual(98765, changed.daily_chat_id)
+
+    def test_daily_time_adjustment_rejects_unapproved_steps(self):
+        with self.assertRaisesRegex(ValueError, "אינו נתמך"):
+            BACKUP_CONTROL.adjust_daily_backup_time(minutes=7, chat_id=98765)
+
     def test_fast_handoff_request_is_explicitly_without_images(self):
         job_id = BACKUP_CONTROL.request_backup(
             chat_id=12345,
@@ -136,6 +155,10 @@ class BackupControlTests(unittest.TestCase):
             "ui backup restore",
             "ui backup dailyon",
             "ui backup dailyoff",
+            "ui backup timem60",
+            "ui backup timep60",
+            "ui backup timem15",
+            "ui backup timep15",
             "ui backup guide 012345abcdef",
         ):
             self.assertEqual("backup", GUIDED_MODEL.parse_ui_callback(callback)[0])

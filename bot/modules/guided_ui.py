@@ -746,6 +746,10 @@ def backup_overview(user_id: int, *, daily: bool) -> tuple[str, object]:
     if daily:
         if not busy:
             buttons.data_button("📦 צור גיבוי מלא עכשיו", "ui backup dailyrun", "header")
+        buttons.data_button("− שעה", "ui backup timem60")
+        buttons.data_button("+ שעה", "ui backup timep60")
+        buttons.data_button("− 15 דקות", "ui backup timem15")
+        buttons.data_button("+ 15 דקות", "ui backup timep15")
         buttons.data_button(
             "⏸ השהיית גיבוי יומי" if settings.daily_enabled else "▶️ הפעלת גיבוי יומי",
             "ui backup dailyoff" if settings.daily_enabled else "ui backup dailyon",
@@ -1286,6 +1290,7 @@ async def guided_callback(client, query):
         if user_id != Config.OWNER_ID:
             return await query.answer("המסך זמין לבעל הבוט בלבד.", show_alert=True)
         from ..helper.ext_utils.backup_control import (
+            adjust_daily_backup_time,
             request_backup,
             set_daily_backup,
         )
@@ -1318,6 +1323,20 @@ async def guided_callback(client, query):
                 else "הגיבוי היומי הושהה.",
                 show_alert=True,
             )
+        elif subaction in {"timem60", "timep60", "timem15", "timep15"}:
+            offsets = {
+                "timem60": -60,
+                "timep60": 60,
+                "timem15": -15,
+                "timep15": 15,
+            }
+            settings = adjust_daily_backup_time(
+                minutes=offsets[subaction], chat_id=user_id
+            )
+            await query.answer(
+                f"שעת הגיבוי נשמרה: {settings.daily_hour:02d}:{settings.daily_minute:02d}",
+                show_alert=False,
+            )
         elif subaction == "restore":
             await query.answer(
                 "כל גיבוי נפתח ונבדק, MongoDB משוחזר למסד זמני ונמחק בסיום, וחיבור Local Bot API מאומת. שחזור מלא לשרת חדש עדיין דורש אישור מפורש.",
@@ -1339,7 +1358,16 @@ async def guided_callback(client, query):
             rich, buttons = backup_home()
             title = "<b>💾 גיבויים והתאוששות</b>"
         else:
-            daily = subaction in {"daily", "dailyrun", "dailyon", "dailyoff"}
+            daily = subaction in {
+                "daily",
+                "dailyrun",
+                "dailyon",
+                "dailyoff",
+                "timem60",
+                "timep60",
+                "timem15",
+                "timep15",
+            }
             rich, buttons = backup_overview(user_id, daily=daily)
             title = "<b>🛡 גיבוי יומי</b>" if daily else "<b>📦 ערכת ניוד</b>"
         return await edit_rich_message(
